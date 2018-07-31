@@ -10,7 +10,7 @@ spec:
         app: nginx-test
     spec:
       containers:
-        - name: hello-world
+        - name: nginx-test
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
           ports:
             - containerPort: 8080
