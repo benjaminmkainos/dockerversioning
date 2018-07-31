@@ -5,5 +5,5 @@ ADD nginx.conf /etc/nginx/nginx.conf
 
 ADD ./www-data /www-data
 
-EXPOSE 80
+EXPOSE 8080
 CMD ["nginx"]
