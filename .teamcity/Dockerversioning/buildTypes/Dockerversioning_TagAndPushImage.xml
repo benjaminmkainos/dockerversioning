@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<build-type xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" uuid="5240bf9c-eeb1-46cb-a7d4-d87780d2c40d" xsi:noNamespaceSchemaLocation="http://www.jetbrains.com/teamcity/schemas/2018.1/project-config.xsd">
+  <name>Tag and push image</name>
+  <description />
+  <settings>
+    <options>
+      <option name="artifactRules" value="dockerbuild.txt" />
+    </options>
+    <disabled-settings>
+      <setting-ref ref="RUNNER_12" />
+    </disabled-settings>
+    <parameters>
+      <param name="commithash" value="" />
+      <param name="container_name" value="testapp" />
+      <param name="env.commithash" value="" />
+    </parameters>
+    <build-runners>
+      <runner id="RUNNER_15" name="Populate Commit Hash" type="simpleRunner">
+        <parameters>
+          <param name="script.content"><![CDATA[commithash=$(cat dockerbuild.txt)
+echo $commithash
+echo "##teamcity[setParameter name='env.commithash' value='$commithash']"]]></param>
+          <param name="teamcity.step.mode" value="default" />
+          <param name="use.custom.script" value="true" />
+        </parameters>
+      </runner>
+      <runner id="RUNNER_3" name="Tag and push" type="simpleRunner">
+        <parameters>
+          <param name="script.content"><![CDATA[set -e
+echo "Commit hash: %env.commithash%"
+touch dockerlog.txt
+
+docker tag "%DOCKER_REGISTRY%/%container_name%:%env.commithash%" "%DOCKER_REGISTRY%/%container_name%:latest"
+
+docker login -u %DOCKER_REGISTRY_USERNAME% -p %DOCKER_REGISTRY_PASSWORD% %DOCKER_REGISTRY%
+docker push "%DOCKER_REGISTRY%/%container_name%:%env.commithash%"
+docker push "%DOCKER_REGISTRY%/%container_name%:latest"
+docker rmi "%DOCKER_REGISTRY%/%container_name%:%env.commithash%"
+docker rmi "%DOCKER_REGISTRY%/%container_name%:latest"]]></param>
+          <param name="teamcity.step.mode" value="default" />
+          <param name="use.custom.script" value="true" />
+        </parameters>
+      </runner>
+      <runner id="RUNNER_12" name="Get docker image reference" type="simpleRunner">
+        <parameters>
+          <param name="script.content"><![CDATA[imageref=$(cat dockerbuild.txt | grep k8scontainerreg.azurecr.io)
+echo $imageref]]></param>
+          <param name="teamcity.step.mode" value="default" />
+          <param name="use.custom.script" value="true" />
+        </parameters>
+      </runner>
+    </build-runners>
+    <vcs-settings>
+      <vcs-entry-ref root-id="Dockerversioning_HttpsGithubComBenjaminmkainosDockerversioningRefsHeadsMaster" />
+    </vcs-settings>
+    <requirements>
+      <equals id="RQ_3" name="system.agent.name" value="ip_10.0.1.4" />
+    </requirements>
+    <build-triggers>
+      <build-trigger id="TRIGGER_1" type="buildDependencyTrigger">
+        <parameters>
+          <param name="afterSuccessfulBuildOnly" value="true" />
+          <param name="branchFilter" value="+:&lt;default&gt;" />
+          <param name="dependsOn" value="Dockerversioning_Build" />
+        </parameters>
+      </build-trigger>
+    </build-triggers>
+    <artifact-dependencies>
+      <dependency id="ARTIFACT_DEPENDENCY_2" sourceBuildTypeId="Dockerversioning_Build" cleanDestination="false">
+        <revisionRule name="sameChainOrLastFinished" revision="latest.sameChainOrLastFinished" />
+        <artifact sourcePath="dockerbuild.txt" />
+      </dependency>
+    </artifact-dependencies>
+    <dependencies>
+      <depend-on sourceBuildTypeId="Dockerversioning_Build">
+        <options>
+          <option name="run-build-if-dependency-failed" value="CANCEL" />
+          <option name="take-started-build-with-same-revisions" value="true" />
+          <option name="take-successful-builds-only" value="true" />
+        </options>
+      </depend-on>
+    </dependencies>
+    <cleanup />
+  </settings>
+</build-type>
+

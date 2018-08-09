@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<build-type xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" uuid="0d57e44c-7e42-41ea-95e5-8ea4cee3c310" xsi:noNamespaceSchemaLocation="http://www.jetbrains.com/teamcity/schemas/2018.1/project-config.xsd">
+  <name>packagehelm_latest</name>
+  <description />
+  <settings>
+    <options>
+      <option name="artifactRules" value="helm/nginx =&gt; nginx_latest.tgz&#xA;helm/nginx2 =&gt; nginx2_latest.tgz&#xA;version.txt" />
+      <option name="cleanBuild" value="true" />
+    </options>
+    <parameters>
+      <param name="env.current_build_date" value="" />
+      <param name="env.current_build_time" value="" />
+    </parameters>
+    <build-runners>
+      <runner id="RUNNER_9" name="Populate build date and time" type="simpleRunner">
+        <parameters>
+          <param name="script.content"><![CDATA[export current_build_date_format="+%%d-%%m-%%Y"
+export current_build_date="$(date $current_build_date_format)"
+echo "##teamcity[setParameter name='env.current_build_date' value='$current_build_date']"
+
+export current_build_time_format="+%%T"
+export current_build_time="$(date $current_build_time_format)"
+echo "##teamcity[setParameter name='env.current_build_time' value='$current_build_time']"]]></param>
+          <param name="teamcity.step.mode" value="default" />
+          <param name="use.custom.script" value="true" />
+        </parameters>
+      </runner>
+      <runner id="RUNNER_6" name="BuildVersionText" type="simpleRunner">
+        <parameters>
+          <param name="script.content"><![CDATA[echo %system.teamcity.build.workingDir%
+
+touch version.txt
+
+echo "Git revision %build.vcs.number.Helmversioning_HttpsGithubComBenjaminmkainosDockerversioning%" >> version.txt
+echo "Became latest at %env.current_build_time% on %env.current_build_date% by %teamcity.build.triggeredBy.username%" >> version.txt]]></param>
+          <param name="teamcity.step.mode" value="default" />
+          <param name="use.custom.script" value="true" />
+        </parameters>
+      </runner>
+    </build-runners>
+    <vcs-settings>
+      <vcs-entry-ref root-id="Helmversioning_HttpsGithubComBenjaminmkainosDockerversioning" />
+    </vcs-settings>
+    <requirements />
+    <build-triggers>
+      <build-trigger id="vcsTrigger" type="vcsTrigger">
+        <parameters>
+          <param name="perCheckinTriggering" value="true" />
+          <param name="quietPeriodMode" value="DO_NOT_USE" />
+          <param name="triggerRules" value="+:root=helm/**" />
+        </parameters>
+      </build-trigger>
+    </build-triggers>
+    <cleanup />
+  </settings>
+</build-type>
+

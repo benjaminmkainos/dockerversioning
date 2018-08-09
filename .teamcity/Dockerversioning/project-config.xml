@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" uuid="8740c334-edca-45b3-87ca-389e3aa03d9c" xsi:noNamespaceSchemaLocation="http://www.jetbrains.com/teamcity/schemas/2018.1/project-config.xsd">
+  <name>Dockerversioning</name>
+  <parameters>
+    <param name="DOCKER_REGISTRY" value="k8scontainerreg.azurecr.io" />
+    <param name="DOCKER_REGISTRY_PASSWORD" value="credentialsJSON:835361ab-aae4-4d8f-82bf-f1800d35e9a1" spec="password display='hidden'" />
+    <param name="DOCKER_REGISTRY_USERNAME" value="k8scontainerreg" />
+    <param name="commithash" value="%build.vcs.number%" />
+    <param name="dockerfile" value="Dockerfile" />
+  </parameters>
+  <cleanup />
+  <buildTypesOrder order="Dockerversioning_Build,Dockerversioning_TagAndPushImage,Dockerversioning_Deploy,Dockerversioning_TagAndPromoteToStable,Dockerversioning_TagAndPromoteToStaging,Dockerversioning_TagAndPromoteToProduction" />
+</project>
+

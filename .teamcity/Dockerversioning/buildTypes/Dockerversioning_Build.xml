@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<build-type xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" uuid="74da77ab-73fe-448f-ae6d-71d5b71b6aec" xsi:noNamespaceSchemaLocation="http://www.jetbrains.com/teamcity/schemas/2018.1/project-config.xsd">
+  <name>Build</name>
+  <description />
+  <settings>
+    <options>
+      <option name="artifactRules" value="dockerbuild.txt" />
+    </options>
+    <parameters>
+      <param name="DOCKER_REGISTRY" value="k8scontainerreg.azurecr.io" />
+      <param name="DOCKER_REGISTRY_PASSWORD" value="credentialsJSON:835361ab-aae4-4d8f-82bf-f1800d35e9a1" />
+      <param name="DOCKER_REGISTRY_USERNAME" value="k8scontainerreg" />
+      <param name="commithash" value="%build.vcs.number%" />
+      <param name="container_name" value="testapp" />
+      <param name="dockerfile" value="Dockerfile" />
+    </parameters>
+    <build-runners>
+      <runner id="RUNNER_2" name="Docker login" type="simpleRunner">
+        <parameters>
+          <param name="script.content"><![CDATA[docker login %DOCKER_REGISTRY% \
+  -u %DOCKER_REGISTRY_USERNAME% \
+  -p %DOCKER_REGISTRY_PASSWORD%]]></param>
+          <param name="teamcity.step.mode" value="default" />
+          <param name="use.custom.script" value="true" />
+        </parameters>
+      </runner>
+      <runner id="RUNNER_1" name="Build container" type="simpleRunner">
+        <parameters>
+          <param name="script.content"><![CDATA[set -e
+touch dockerbuild.txt
+echo "Commit hash: %commithash%"
+docker build . -t %DOCKER_REGISTRY%/%container_name%:%commithash% -f %dockerfile% >> dockerbuild.txt]]></param>
+          <param name="teamcity.step.mode" value="default" />
+          <param name="use.custom.script" value="true" />
+        </parameters>
+      </runner>
+      <runner id="RUNNER_14" name="Publish Docker Commit" type="simpleRunner">
+        <parameters>
+          <param name="script.content"><![CDATA[touch dockerbuild.txt
+echo "%commithash%" > dockerbuild.txt]]></param>
+          <param name="teamcity.step.mode" value="default" />
+          <param name="use.custom.script" value="true" />
+        </parameters>
+      </runner>
+    </build-runners>
+    <vcs-settings>
+      <vcs-entry-ref root-id="Dockerversioning_HttpsGithubComBenjaminmkainosDockerversioningRefsHeadsMaster" />
+    </vcs-settings>
+    <requirements>
+      <equals id="RQ_2" name="system.agent.name" value="ip_10.0.1.4" />
+    </requirements>
+    <build-triggers>
+      <build-trigger id="vcsTrigger" type="vcsTrigger">
+        <parameters>
+          <param name="branchFilter" value="+:*" />
+          <param name="enableQueueOptimization" value="true" />
+          <param name="quietPeriodMode" value="DO_NOT_USE" />
+        </parameters>
+      </build-trigger>
+    </build-triggers>
+    <cleanup />
+  </settings>
+</build-type>
+

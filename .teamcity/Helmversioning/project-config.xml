@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" uuid="cf0ef2a0-ed22-4af6-a91a-9f54c24e7a8f" xsi:noNamespaceSchemaLocation="http://www.jetbrains.com/teamcity/schemas/2018.1/project-config.xsd">
+  <name>helmversioning</name>
+  <parameters />
+  <cleanup />
+  <buildTypesOrder order="Dockerversioning_Packagehelm" />
+</project>
+

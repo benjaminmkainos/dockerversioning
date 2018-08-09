@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<build-type xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" uuid="560da09a-698e-43a1-8bad-3ce959e55c4a" xsi:noNamespaceSchemaLocation="http://www.jetbrains.com/teamcity/schemas/2018.1/project-config.xsd">
+  <name>Tag and Promote to Staging</name>
+  <description />
+  <settings>
+    <options>
+      <option name="artifactRules" value="dockerversion.txt&#xA;dockerbuild.txt" />
+      <option name="cleanBuild" value="true" />
+    </options>
+    <disabled-settings>
+      <setting-ref ref="TRIGGER_1" />
+    </disabled-settings>
+    <parameters>
+      <param name="container_name" value="testapp" />
+      <param name="env.commithash" value="" />
+      <param name="env.current_build_date" value="" />
+      <param name="env.current_build_time" value="" />
+    </parameters>
+    <build-runners>
+      <runner id="RUNNER_7" name="Populate Commit Hash" type="simpleRunner">
+        <parameters>
+          <param name="script.content"><![CDATA[commithash=$(cat dockerbuild.txt)
+echo $commithash
+echo "##teamcity[setParameter name='env.commithash' value='$commithash']"]]></param>
+          <param name="teamcity.step.mode" value="default" />
+          <param name="use.custom.script" value="true" />
+        </parameters>
+      </runner>
+      <runner id="RUNNER_19" name="Populate build date and time" type="simpleRunner">
+        <parameters>
+          <param name="script.content"><![CDATA[export current_build_date_format="+%%d-%%m-%%Y"
+export current_build_date="$(date $current_build_date_format)"
+echo "##teamcity[setParameter name='env.current_build_date' value='$current_build_date']"
+
+export current_build_time_format="+%%T"
+export current_build_time="$(date $current_build_time_format)"
+echo "##teamcity[setParameter name='env.current_build_time' value='$current_build_time']"]]></param>
+          <param name="teamcity.step.mode" value="default" />
+          <param name="use.custom.script" value="true" />
+        </parameters>
+      </runner>
+      <runner id="RUNNER_3" name="Tag and push" type="simpleRunner">
+        <parameters>
+          <param name="script.content"><![CDATA[set -e
+echo "Commit hash: %env.commithash%"
+
+echo "Logging into ACS"
+docker login -u %DOCKER_REGISTRY_USERNAME% -p %DOCKER_REGISTRY_PASSWORD% %DOCKER_REGISTRY%
+
+echo "Pulling specified image"
+echo ""%DOCKER_REGISTRY%/%container_name%:%env.commithash%""
+docker pull "%DOCKER_REGISTRY%/%container_name%:%env.commithash%"
+
+
+echo "Promoting to Stable"
+docker tag "%DOCKER_REGISTRY%/%container_name%:%env.commithash%" "%DOCKER_REGISTRY%/%container_name%:staging"
+docker push "%DOCKER_REGISTRY%/%container_name%:staging"
+docker rmi "%DOCKER_REGISTRY%/%container_name%:%env.commithash%"
+docker rmi "%DOCKER_REGISTRY%/%container_name%:staging"]]></param>
+          <param name="teamcity.step.mode" value="default" />
+          <param name="use.custom.script" value="true" />
+        </parameters>
+      </runner>
+      <runner id="RUNNER_20" name="DockerVersionText" type="simpleRunner">
+        <parameters>
+          <param name="script.content"><![CDATA[echo %system.teamcity.build.workingDir%
+
+echo "Docker image %env.commithash% promoted to staging at %env.current_build_time% on %env.current_build_date% by %teamcity.build.triggeredBy.username%" >> dockerversion.txt]]></param>
+          <param name="teamcity.step.mode" value="default" />
+          <param name="use.custom.script" value="true" />
+        </parameters>
+      </runner>
+    </build-runners>
+    <vcs-settings>
+      <vcs-entry-ref root-id="Dockerversioning_HttpsGithubComBenjaminmkainosDockerversioningRefsHeadsMaster" />
+    </vcs-settings>
+    <requirements>
+      <equals id="RQ_3" name="system.agent.name" value="ip_10.0.1.4" />
+    </requirements>
+    <build-triggers>
+      <build-trigger id="TRIGGER_1" type="buildDependencyTrigger">
+        <parameters>
+          <param name="afterSuccessfulBuildOnly" value="true" />
+          <param name="branchFilter" value="+:&lt;default&gt;" />
+          <param name="dependsOn" value="Dockerversioning_Build" />
+        </parameters>
+      </build-trigger>
+    </build-triggers>
+    <artifact-dependencies>
+      <dependency id="ARTIFACT_DEPENDENCY_5" sourceBuildTypeId="Dockerversioning_TagAndPromoteToStable" cleanDestination="false">
+        <revisionRule name="lastSuccessful" revision="latest.lastSuccessful" />
+        <artifact sourcePath="dockerbuild.txt&#xD;&#xA;dockerversion.txt" />
+      </dependency>
+    </artifact-dependencies>
+    <dependencies>
+      <depend-on sourceBuildTypeId="Dockerversioning_Build">
+        <options>
+          <option name="run-build-if-dependency-failed" value="CANCEL" />
+          <option name="take-started-build-with-same-revisions" value="true" />
+          <option name="take-successful-builds-only" value="true" />
+        </options>
+      </depend-on>
+    </dependencies>
+    <cleanup />
+  </settings>
+</build-type>
+

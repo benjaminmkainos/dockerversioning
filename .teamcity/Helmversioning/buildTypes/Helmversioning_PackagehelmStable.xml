@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<build-type xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" uuid="06b3ec6c-be39-44d4-bc61-251b89de4e9e" xsi:noNamespaceSchemaLocation="http://www.jetbrains.com/teamcity/schemas/2018.1/project-config.xsd">
+  <name>packagehelm_stable</name>
+  <description />
+  <settings>
+    <options>
+      <option name="artifactRules" value="nginx_stable.tgz&#xA;nginx2_stable.tgz&#xA;version.txt" />
+    </options>
+    <parameters>
+      <param name="env.current_build_date" value="" />
+      <param name="env.current_build_time" value="" />
+    </parameters>
+    <build-runners>
+      <runner id="RUNNER_10" name="Populate build date and time" type="simpleRunner">
+        <parameters>
+          <param name="script.content"><![CDATA[export current_build_date_format="+%%d-%%m-%%Y"
+export current_build_date="$(date $current_build_date_format)"
+echo "##teamcity[setParameter name='env.current_build_date' value='$current_build_date']"
+
+export current_build_time_format="+%%T"
+export current_build_time="$(date $current_build_time_format)"
+echo "##teamcity[setParameter name='env.current_build_time' value='$current_build_time']"]]></param>
+          <param name="teamcity.step.mode" value="default" />
+          <param name="use.custom.script" value="true" />
+        </parameters>
+      </runner>
+      <runner id="RUNNER_8" name="Publish Stable" type="simpleRunner">
+        <parameters>
+          <param name="script.content"><![CDATA[echo "%teamcity.build.checkoutDir%/nginx_latest.tgz"
+echo "%teamcity.build.checkoutDir%/nginx2_latest.tgz"
+
+cp %teamcity.build.checkoutDir%/nginx_latest.tgz %teamcity.build.checkoutDir%/nginx_stable.tgz
+cp %teamcity.build.checkoutDir%/nginx2_latest.tgz %teamcity.build.checkoutDir%/nginx2_stable.tgz]]></param>
+          <param name="teamcity.step.mode" value="default" />
+          <param name="use.custom.script" value="true" />
+        </parameters>
+      </runner>
+      <runner id="RUNNER_11" name="BuildVersionText" type="simpleRunner">
+        <parameters>
+          <param name="script.content"><![CDATA[echo %system.teamcity.build.workingDir%
+
+echo "Promoted to stable at %env.current_build_time% on %env.current_build_date% by %teamcity.build.triggeredBy.username%" >> version.txt]]></param>
+          <param name="teamcity.step.mode" value="default" />
+          <param name="use.custom.script" value="true" />
+        </parameters>
+      </runner>
+    </build-runners>
+    <vcs-settings>
+      <vcs-entry-ref root-id="Helmversioning_HttpsGithubComBenjaminmkainosDockerversioning" />
+    </vcs-settings>
+    <requirements />
+    <build-triggers />
+    <artifact-dependencies>
+      <dependency id="ARTIFACT_DEPENDENCY_1" sourceBuildTypeId="Dockerversioning_Packagehelm" cleanDestination="false">
+        <revisionRule name="lastSuccessful" revision="latest.lastSuccessful" />
+        <artifact sourcePath="nginx2_latest.tgz&#xD;&#xA;nginx_latest.tgz&#xD;&#xA;version.txt" />
+      </dependency>
+    </artifact-dependencies>
+    <cleanup />
+  </settings>
+</build-type>
+
